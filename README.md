@@ -1,1 +1,1 @@
-# codeguru-reviewer-scans
+This workflow uses Codeguru Reviewer service to scan your repository and brings output about code performance and security.

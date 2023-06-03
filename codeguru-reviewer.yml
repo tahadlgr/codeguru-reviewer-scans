@@ -1,0 +1,47 @@
+name: CodeGuru Reviewer
+on:
+  schedule:
+    - cron:  '30 17 1 * *'  ## CodeGuru full repository analyzes run once every 30 days.
+  push:
+    branches:
+      - master
+      - development
+  pull_request:
+    branches:
+      - master
+      - development
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: CodeGuru Reviewer
+    runs-on: ubuntu-latest
+    # These permissions are needed to interact with GitHub's OIDC Token endpoint.
+    permissions:
+      id-token: write
+      checks: read
+      contents: read
+      actions: read
+      security-events: write
+      pull-requests: write
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0 # This is a required field for CodeGuru
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        role-to-assume: ${{ secrets.AWS_GITHUB_ACTIONS_ROLE }}
+        aws-region: eu-central-1
+    - name: CodeGuru Reviewer
+      uses: aws-actions/codeguru-reviewer@v1.1
+      with:
+        s3_bucket: ${{ secrets.AWS_CODEGURU_REVIEWER_S3_BUCKET }}
+    - name: Upload review result
+      if: always()
+      #if: ${{ github.event_name != 'push' }}
+      uses: github/codeql-action/upload-sarif@v2
+      with:
+        sarif_file: codeguru-results.sarif.json
+
